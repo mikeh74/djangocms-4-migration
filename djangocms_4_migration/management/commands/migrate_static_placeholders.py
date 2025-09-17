@@ -138,12 +138,12 @@ def _create_alias_content(alias, name, language, user, state=PUBLISHED):
         language=language,
     )
 
-    Version.objects.update_or_create(
-        content_type=ContentType.objects.get_for_model(alias_content),
-        object_id=alias_content.id,
-        created_by=user,
-        state=state,
-    )
+    # Version.objects.update_or_create(
+    #     content_type=ContentType.objects.get_for_model(alias_content),
+    #     object_id=alias_content.id,
+    #     created_by=user,
+    #     state=state,
+    # )
     logger.info(f"Created AliasContent {alias_content}")
 
     return alias_content
