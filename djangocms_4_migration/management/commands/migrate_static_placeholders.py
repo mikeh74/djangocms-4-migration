@@ -10,6 +10,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.contenttypes.models import ContentType
 
 from cms.models import CMSPlugin, Placeholder, StaticPlaceholder
+from cms.utils.i18n import get_language_list
 
 from djangocms_alias.models import Category, Alias, AliasContent
 from djangocms_alias.constants import DEFAULT_STATIC_ALIAS_CATEGORY_NAME
@@ -132,6 +133,15 @@ def _get_or_create_alias(category, static_code, site):
 
 
 def _create_alias_content(alias, name, language, user, state=PUBLISHED):
+    # Get the site from the alias or use the default site
+    site_id = alias.site_id if alias.site_id else 1
+    
+    # Validate language - if not recognized, default to English
+    available_languages = get_language_list(site_id)
+    if language not in available_languages:
+        logger.warning(f"Language '{language}' not recognized for site {site_id}. Defaulting to 'en'.")
+        language = 'en'
+
     alias_content = AliasContent.objects.with_user(user).create(
         alias=alias,
         name=name,
