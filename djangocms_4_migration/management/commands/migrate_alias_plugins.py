@@ -230,7 +230,7 @@ def process_old_alias_sources(site, language, site_plugin_queryset):
             name=cms4_alias_name,
             language=language,
         )
-        alias_content.save()
+        # alias_content.save()
         # Added Child Plugins to alias content if they exists
         child_plugins = get_child_plugins(old_plugin)
         plugins = [old_plugin]
