@@ -1,5 +1,7 @@
 import logging
 
+from cms.utils.i18n import get_language_list
+
 from django.core.management.base import BaseCommand
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
@@ -204,7 +206,26 @@ def process_old_alias_sources(site, language, site_plugin_queryset):
         )
         alias_grouper.save()
         # Create Alias Content
-        alias_content = AliasContent.objects.create(
+
+        # Get the site from the alias or use the default site
+        site_id = 1
+        
+        # Validate language - if not recognized, default to English
+        available_languages = get_language_list(site_id)
+        if language not in available_languages:
+            logger.warning(f"Language '{language}' not recognized for site {site_id}. Defaulting to 'en'.")
+            language = 'en'
+
+        # alias_content = AliasContent.objects.create(
+        #     alias=alias_grouper,
+        #     name=cms4_alias_name,
+        #     language=language,
+        # )
+
+        # Grab a user to associate with the creation
+        user = User.objects.all().first()
+
+        alias_content = AliasContent.objects.with_user(user).create(
             alias=alias_grouper,
             name=cms4_alias_name,
             language=language,
