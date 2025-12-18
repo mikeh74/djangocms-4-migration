@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
+from django.db.utils import IntegrityError
 
 from cms.api import add_plugin
 from cms.models import (
@@ -245,17 +246,34 @@ def process_old_alias_sources(site, language, site_plugin_queryset):
         alias_content.populate(plugins=plugins)
         alias_content.save()
 
-        # if is_versioning_enabled():
-        #     from djangocms_versioning.models import Version
+        if is_versioning_enabled():
+            from djangocms_versioning.models import Version
 
-        #     # Create version
-        #     changed_by = User.objects.get(
-        #         **{User.USERNAME_FIELD: old_plugin.placeholder.source.changed_by}
-        #     )
-        #     version = Version.objects.create(
-        #         content=alias_content, created_by=changed_by
-        #     )
-        #     version.publish(changed_by)
+            try:
+                # Create version
+                changed_by = User.objects.get(
+                    **{User.USERNAME_FIELD: old_plugin.placeholder.source.changed_by}
+                )
+                version = Version.objects.create(
+                    content=alias_content, created_by=changed_by
+                )
+                version.publish(changed_by)
+            except IntegrityError as e:
+                logger.warning(
+                    "IntegrityError creating/publishing version for alias_content %s: %s",
+                    getattr(alias_content, "pk", None),
+                    e,
+                )
+            except ObjectDoesNotExist:
+                logger.warning(
+                    "Changed-by user does not exist for plugin %s, skipping version creation",
+                    old_plugin.id,
+                )
+            except Exception:
+                logger.exception(
+                    "Unexpected error creating/publishing version for alias_content %s",
+                    getattr(alias_content, "pk", None),
+                )
 
         # create csm4 alias plugins for cms3 alias references
         create_reference_alias_plugins(old_plugin, alias_grouper)
